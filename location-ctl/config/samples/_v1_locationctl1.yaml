@@ -1,0 +1,15 @@
+apiVersion: pinetree227.github.io/v1
+kind: LocationCtl
+metadata:
+  labels:
+    app.kubernetes.io/name: locationctl
+    app.kubernetes.io/instance: locationctl-sample
+    app.kubernetes.io/part-of: location-ctl
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: location-ctl
+  name: locationctl1-sample
+spec:
+  podLatitude: 10
+  podLongitude: 10
+  replicas: 1
+
