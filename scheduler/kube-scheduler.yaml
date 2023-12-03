@@ -47,7 +47,6 @@ spec:
     volumeMounts:
     - name: my-scheduler-config
       mountPath: /etc/kubernetes/my-kube-scheduler-profile.yaml
-      #name: kubeconfig
       readOnly: true
     - name: kubeconfig
       mountPath: /etc/kubernetes/scheduler.conf  
@@ -57,21 +56,13 @@ spec:
   securityContext:
     seccompProfile:
       type: RuntimeDefault
-      # volumes:
-      # - configMap:
-      #  name: my-scheduler-config
-      # name: my-scheduler-config      
   volumes:
   - hostPath:
-          #path: /etc/kubernetes/scheduler.conf
       path: /etc/kubernetes/my-kube-scheduler-profile.yaml
       type: FileOrCreate      
-  #name: kubeconfig
     name: my-scheduler-config
   - hostPath:
       path: /etc/kubernetes/scheduler.conf
-      #path: /etc/kubernetes/my-kube-scheduler-profile.yaml
       type: FileOrCreate
     name: kubeconfig
-    # name: my-scheduler-config
 status: {}

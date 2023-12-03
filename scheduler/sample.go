@@ -1,12 +1,16 @@
 package main
 import (
     "context"
+    "fmt"
+    "regexp"
 //    "strings"
+    "flag"
     "math"
     "strconv"
     v1 "k8s.io/api/core/v1"
     "k8s.io/apimachinery/pkg/runtime"
     framework "k8s.io/kubernetes/pkg/scheduler/framework"
+    "k8s.io/klog/v2"
 )
 
 type SamplePlugin struct{}
@@ -32,7 +36,6 @@ func NewSamplePlugin(_ runtime.Object, _ framework.Handle) (framework.Plugin, er
 
 var _ framework.ScorePlugin = &SamplePlugin{}
 var _ framework.PreScorePlugin = &SamplePlugin{}
-
 
 func (pl *SamplePlugin) Name() string {
     return "SamplePlugin"
@@ -132,9 +135,17 @@ const Name = "NodeNumber"
 const preScoreStateKey = "PreScore" + Name
 
 type preScoreState struct {
-	podLatitude int
-	podLongitude int
+	x float64
+	y float64
 }
+func init() {
+	// initで呼び出しているが、以下は最初のログを書き出す前であればどこで実行してもよい
+    flagset := flag.NewFlagSet("", flag.ContinueOnError)
+    klog.InitFlags(flagset)
+	// "-v=2" とすると "Hey from 地球" のログエントリーも表示される。
+    flagset.Parse([]string{"-v=1"})
+}
+
 
 // Clone implements the mandatory Clone interface. We don't really copy the data since
 // there is no need for that.
@@ -144,57 +155,100 @@ func (s *preScoreState) Clone() framework.StateData {
 }
 
 func (pl *SamplePlugin) PreScore(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodes []*v1.Node) *framework.Status {
-	value1 := pod.Labels["podLatitude"]
+	value1 := pod.Labels["podx"]
 	if value1 != "" {
-		num1, err := strconv.Atoi(value1)
+		num1, err := strconv.ParseFloat(value1,64)
 		if err != nil {
 			return nil
 		}
-	value2 := pod.Labels["podLongitude"]
+	value2 := pod.Labels["pody"]
 	if value2 != "" {
-		num2, err := strconv.Atoi(value2)
+		num2, err := strconv.ParseFloat(value2,64)
 		if err != nil {
 			return nil
 		}
 	s := &preScoreState{
-		podLatitude: num1,
-		podLongitude: num2,
+		x: num1,
+		y: num2,
 	}
 	state.Write(preScoreStateKey, s)
 	}
 }
-
 	return nil
 }
 
 func (pl *SamplePlugin) Score(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodeName string) (int64, *framework.Status) {
-	la:=nodeName[len(nodeName)-2:]
-	num1,err := strconv.Atoi(la)
-	if err != nil {
-                return 0, framework.AsStatus(err)
+/*	la:=nodeName[len(nodeName)-2:]
+	if _,err := strconv.Atoi(la); err != nil {
+                return 0, nil
         }
+	num1,err := strconv.Atoi(la)
 
 	lo:=nodeName[len(nodeName)-4:len(nodeName)-3]
-        num2,err := strconv.Atoi(lo)
-        if err != nil {
-                return 0, framework.AsStatus(err)
+        if _,err := strconv.Atoi(lo); err != nil {
+                return 0, nil
         }
-	data, err := state.Read(preScoreStateKey)
+	num2,err := strconv.Atoi(lo)
+	*/
+//	flagset := flag.NewFlagSet("",flag.ContinueOnError)
+//	klog.InitFlags(flagset)
+ //       logger := klig.FiomContext(ctx)
+	defer klog.Flush()
+	y, x, err := extractNumbers(nodeName)
+
 	if err != nil {
+		fmt.Println("エラー:", err)
 		return 0, framework.AsStatus(err)
 	}
-	s, ok := data.(*preScoreState)
-	if !ok {
+
+	if _, err := state.Read(preScoreStateKey); err != nil {
 		return 0, framework.AsStatus(err)
 	}
-	dest := (num1 - s.podLatitude) * (num1 - s.podLatitude) + (num2 - s.podLongitude) * (num2 - s.podLongitude)
+
+	data, err := state.Read(preScoreStateKey)
+	if _, ok := data.(*preScoreState); !ok {
+		return 0, framework.AsStatus(err)
+	}
+	s, _ :=data.(*preScoreState);
+
+	dest := (x - s.x) * (x - s.x) + (y - s.y) * (y - s.y)
 	if dest > 0 {
 		dest2 := math.Sqrt(float64(dest))
-		dest3 := 100-int64(dest2)
-		return int64(dest3), nil
+		dest3 := 1000-int64(dest2)
+		dest4 := int64(float64(dest3) * (float64(1) / float64(10)))
+		klog.V(4).InfoS("score:",nodeName,dest4)
+		return dest4, nil
 	}
 	return 0, nil
 }
+
+func extractNumbers(inputString string) (float64, float64, error) {
+	// 正規表現のパターン
+	pattern := `(\d{2})(\d{2})$`
+
+	// 正規表現に一致するか確認
+	re := regexp.MustCompile(pattern)
+	matches := re.FindStringSubmatch(inputString)
+
+	if len(matches) != 3 {
+		return 0, 0, fmt.Errorf("数値に変換できません")
+
+	}
+
+	// 文字列から数値に変換
+	firstTwo, err := strconv.ParseFloat(matches[1],64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("数値に変換できません: %v", err)
+	}
+
+	lastTwo, err := strconv.ParseFloat(matches[2],64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("数値に変換できません: %v", err)
+	}
+
+	return firstTwo*8.66, lastTwo*5, nil
+}
+
 
 func (pl *SamplePlugin) ScoreExtensions() framework.ScoreExtensions {
 	return nil

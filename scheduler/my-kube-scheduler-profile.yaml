@@ -4,6 +4,10 @@ clientConnection:
    kubeconfig: "/etc/kubernetes/scheduler.conf"
 profiles:
   - plugins:
-      filter:
+      preScore:
         enabled:
         - name: SamplePlugin
+      score:
+        enabled:
+        - name: SamplePlugin
+          weight: 5
