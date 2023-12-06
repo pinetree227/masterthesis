@@ -63,10 +63,10 @@ github.com/onsi/ginkgo/v2 v2.11.0 h1:WgqUCUt/lT6yXoQ8Wef0fsNn5cAuMK7+KT9UFRz2tcU
 github.com/onsi/ginkgo/v2 v2.11.0/go.mod h1:ZhrRA5XmEE3x3rhlzamx/JJvujdZoJ2uvgI7kR0iZvM=
 github.com/onsi/gomega v1.27.10 h1:naR28SdDFlqrG6kScpT8VWpu1xWY5nJRCF3XaYyBjhI=
 github.com/onsi/gomega v1.27.10/go.mod h1:RsS8tutOdbdgzbPtzzATp12yT7kM5I5aElG3evPbQ0M=
-github.com/pinetree227/location-ctl v0.0.0-20231111092151-ccb5096a8503 h1:rfo0lwmaP7A8rrAWMAmNZL+TwNvOrPR8lBXQbAQLuGo=
-github.com/pinetree227/location-ctl v0.0.0-20231111092151-ccb5096a8503/go.mod h1:NYgrulWPI4uALBwQg2/YQdnlmNZYPxZmFJd2hdzu0pM=
 github.com/pinetree227/location-ctl v0.0.0-20231115094435-bed4b1dd6d85 h1:G8rsI5iRgiwy6oti/a/5X+p9dEoAkevdODPNURI2NFk=
 github.com/pinetree227/location-ctl v0.0.0-20231115094435-bed4b1dd6d85/go.mod h1:NYgrulWPI4uALBwQg2/YQdnlmNZYPxZmFJd2hdzu0pM=
+github.com/pinetree227/location-ctl v0.0.0-20231203073001-0739f6278687 h1:z111LBBSMsXM98Q8TeDHJ91qnbAdKYKEriFsyzkAzas=
+github.com/pinetree227/location-ctl v0.0.0-20231203073001-0739f6278687/go.mod h1:XkIshpDc/Qxoq9niTW2Sxbd79kG3ENfuADdUyhoSbxk=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjRBZyWFQ=

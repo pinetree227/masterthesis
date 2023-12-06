@@ -44,28 +44,106 @@ import (
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
-func createCustomResource(clientset *versioned.Clientset, name string) error {
+type MyCustomResource struct {
+name string
+x float64
+y float64
+update int
+apptype string
+loadtype string
+deleted int
+}
 
-    x:=rand.Intn(100)
-    y:=rand.Intn(100)
+func createCustomResource(clientset *versioned.Clientset, name string) (*MyCustomResource, error) {
+    options1 := []string{"A","B","C","D","E","F","G","H"}
+    options2 := []string{"realtime","no-realtime"}
+    loadtype := options1[rand.Intn(len(options1))]
+    apptype := options2[rand.Intn(len(options2))]
+    x:=rand.Float64()*100
+    y:=rand.Float64()*100
 
+    switch loadtype {
+    case "A","B":
+	    x = 75.00
+    case "C","D":
+	    x = 25.00
+    case "E","F":
+	    y = 75.00
+    case "G","H":
+	    y = 25.00
+    }
+    newResource := &MyCustomResource{name,x,y,0,apptype,loadtype,0}
     cr := &pinev1.LocationCtl{
         ObjectMeta: metav1.ObjectMeta{
             Name: name,
         },
         Spec: pinev1.LocationCtlSpec{
             // Set your custom resource spec fields here
-  PodX: strconv.Itoa(x),
-  PodY: strconv.Itoa(y),
+  PodX: strconv.FormatFloat(x,'f',2,64),
+  PodY: strconv.FormatFloat(y,'f',2,64),
+  Update: 0,
+  Apptype: apptype,
   Replicas: 1,
         },
     }
     _, err := clientset.CtlV1().LocationCtls("default").Create(context.TODO(), cr, metav1.CreateOptions{})
     if err != nil {
-        return fmt.Errorf("failed to create custom resource: %v", err)
+        return newResource,fmt.Errorf("failed to create custom resource: %v", err)
     }
 
-    return nil
+    return newResource,nil
+}
+
+func updateCustomResource(clientset *versioned.Clientset, myResource *MyCustomResource) (int, error) {
+	customResource, err := clientset.CustomResource("ctl", "v1", "default", myResource.Name)
+	if err != nil {
+		return 0,err
+	}
+
+	// 取得したカスタムリソースを変更
+	customResource.Spec.Update = 1
+	myResource.Update += 1
+	switch myResource.loadtype {
+	case "A":
+		myResource.Y += 0.32
+            customResource.Spec.PodY = myResource.Y
+	case "B":
+		myResource.Y -= 0.32
+		customResource.Spec.Y = myResource.Y
+        case "C":
+		myResource.Y += 0.32
+		customResource.Spec.Y = myResource.Y
+	case "D":
+		myResource.Y -= 0.32
+		customResource.Spec.Y = myResource.Y
+        case "E":
+		myResource.X += 0.32
+            customResource.Spec.X = myResource.X
+        case "F":
+		myResource.X -= 0.32
+            customResource.Spec.X = myResource.X
+	case "G":
+		myResource.X += 0.32
+            customResource.Spec.X = myResource.X
+        case "H":
+		myResource.X -= 0.32
+            customResource.Spec.X = myResource.X
+    }
+    if 0 =< myResource.X =< 100 && 0 =< myResource.Y =< 100 {
+	    _, err := clientset.UpdateCustomResource("ctl", "v1", "default", myResource.Name, customResource)
+        if err != nil {
+                return 0,err
+        }
+    }else{
+	err := clientset.DeleteCustomResource("ctl", "v1", "default", myResource.Name, customResource,metav1.DeleteOptions{})
+	if err != nil {
+		return 0,err
+	}
+	myResource.deleted = 1
+}
+    return 0,nil
+
+
 }
 
 
@@ -89,59 +167,42 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	n := 160
-
+	n := 25
+	var p []*MyCustomResource 
 	name := "example-custom-resource"
 	crdname := ""
 	for i := 1; i <= n; i++ {
         crdname = name + strconv.Itoa(i)
-	err = createCustomResource(clientset, crdname)
+	newResource,err := createCustomResource(clientset, crdname)
+	p = append(p,newResource)
 	if err != nil {
 	panic(err.Error())
 	}
-}
-}
-        pods, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
+	}
+        time.Sleep(10*time.Second)
+	j := 0
+	for {
+	start := time.Now()
+	j = 0
+	fmt.Println(time.Now())
+	var delindex []int
+	for index, v in range p {
+        crdname = name + strconv.Itoa(i)
+	if v.deleted != 1{
+		j += 1
+        del,err = updateCustomResource(clientset, v)
         if err != nil {
-                panic(err.Error())
-        }
+        panic(err.Error())
+        }}}
+	if j == 0 {
+		break
+	}
+	elapsed := time.Since(start)
+	sleepDurarion := time.Second - elapsed
+	if sleepDuration > 0 {
+		time.Sleep(sleepDuration)
+	}
+	fmt.Println(elapsed)
+}
 
-        var wg sync.WaitGroup
-        var mu sync.Mutex
-        var sum, sumSquared float64
-
-        for _, pod := range pods.Items {
-                wg.Add(1)
-                go func(pod v1.Pod) {
-                        defer wg.Done()
-                        nodeName := pod.Spec.NodeName
-                        value1 := pod.Labels["podx"]
-                        if value1 != "" {
-                                if _, err := strconv.Atoi(value1); err != nil {
-                                        return
-                                }
-                        }
-                        value2 := pod.Labels["pody"]
-                        if value2 != "" {
-                                if _, err := strconv.Atoi(value2); err != nil {
-                                 return
-                         }
-                 }
-                        podx, _ := strconv.Atoi(value1)
-                        pody, _ := strconv.Atoi(value2)
-                        y,x,err := extractNumbers(nodeName)
-                        if err != nil {
-                                        fmt.Printf("Error getting last digit from node name %s: %v\n", nodeName, err)
-                                        return
-                                }
-
-                                mu.Lock()
-                                defer mu.Unlock()
-                                dest := (x - podx) * (x - podx) + (y - pody) * (y - pody)
-                                sum += math.Sqrt(float64(dest))
-                                sumSquared += float64(dest)
-                        }(pod)
-        }
-
-        wg.Wait()
-	time.Sleep(10*time.Second)
+}

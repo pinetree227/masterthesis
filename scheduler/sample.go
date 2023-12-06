@@ -214,8 +214,8 @@ func (pl *SamplePlugin) Score(ctx context.Context, state *framework.CycleState, 
 	dest := (x - s.x) * (x - s.x) + (y - s.y) * (y - s.y)
 	if dest > 0 {
 		dest2 := math.Sqrt(float64(dest))
-		dest3 := 1000-int64(dest2)
-		dest4 := int64(float64(dest3) * (float64(1) / float64(10)))
+		dest3 := 110-int64(dest2)
+		dest4 := int64(float64(dest3) * float64(100) / float64(110))
 		klog.V(4).InfoS("score:",nodeName,dest4)
 		return dest4, nil
 	}
@@ -246,7 +246,7 @@ func extractNumbers(inputString string) (float64, float64, error) {
 		return 0, 0, fmt.Errorf("数値に変換できません: %v", err)
 	}
 
-	return firstTwo*8.66, lastTwo*5, nil
+	return firstTwo, lastTwo, nil
 }
 
 

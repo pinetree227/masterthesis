@@ -79,7 +79,7 @@ func extractNumbers(inputString string) (float64, float64, error) {
                 return 0, 0, fmt.Errorf("数値に変換できません: %v", err)
         }
 
-	return firstTwo*8.66, lastTwo*5, nil
+	return firstTwo, lastTwo, nil
 }
 
 
