@@ -21,37 +21,25 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	//"path/filepath"
 	"time"
 	"strconv"
-
-	//"k8s.io/apimachinery/pkg/api/errors"
+  //      "sync"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-//	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"math/rand"
-//	"strings"
 	pinev1 "github.com/pinetree227/location-ctl/api/ctl/v1"
         "github.com/pinetree227/location-ctl/generated/ctl/clientset/versioned"
-	//
-	// Uncomment to load all auth plugins
-	// _ "k8s.io/client-go/plugin/pkg/client/auth"
-	//
-	// Or uncomment to load specific auth plugins
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/azure"
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 type MyCustomResource struct {
-name string
-x float64
-y float64
-update int
-apptype string
-loadtype string
-deleted int
+Name string
+X float64
+Y float64
+Update int
+Apptype string
+Loadtype string
+Deleted int
 }
 
 func createCustomResource(clientset *versioned.Clientset, name string) (*MyCustomResource, error) {
@@ -94,54 +82,37 @@ func createCustomResource(clientset *versioned.Clientset, name string) (*MyCusto
     return newResource,nil
 }
 
-func updateCustomResource(clientset *versioned.Clientset, myResource *MyCustomResource) (int, error) {
-	customResource, err := clientset.CustomResource("ctl", "v1", "default", myResource.Name)
-	if err != nil {
-		return 0,err
-	}
-
-	// 取得したカスタムリソースを変更
-	customResource.Spec.Update = 1
+func updateCustomResource(clientset *versioned.Clientset, myResource *MyCustomResource, mdView *pinev1.LocationCtl)  error {
 	myResource.Update += 1
-	switch myResource.loadtype {
-	case "A":
-		myResource.Y += 0.32
-            customResource.Spec.PodY = myResource.Y
-	case "B":
-		myResource.Y -= 0.32
-		customResource.Spec.Y = myResource.Y
-        case "C":
-		myResource.Y += 0.32
-		customResource.Spec.Y = myResource.Y
-	case "D":
-		myResource.Y -= 0.32
-		customResource.Spec.Y = myResource.Y
-        case "E":
-		myResource.X += 0.32
-            customResource.Spec.X = myResource.X
-        case "F":
-		myResource.X -= 0.32
-            customResource.Spec.X = myResource.X
-	case "G":
-		myResource.X += 0.32
-            customResource.Spec.X = myResource.X
-        case "H":
-		myResource.X -= 0.32
-            customResource.Spec.X = myResource.X
+	switch myResource.Loadtype {
+	case "A","C":
+		myResource.Y += 0.32*10
+	case "B","D":
+		myResource.Y -= 0.32*10
+        case "E","G":
+		myResource.X += 0.32*10
+        case "F","H":
+		myResource.X -= 0.32*10
     }
-    if 0 =< myResource.X =< 100 && 0 =< myResource.Y =< 100 {
-	    _, err := clientset.UpdateCustomResource("ctl", "v1", "default", myResource.Name, customResource)
+    if myResource.X < 100 && myResource.Y < 100 && myResource.X > 0 && myResource.Y > 0 {
+
+	    if (myResource.X + 0.32*10 > 50.0 && myResource.X < 50.0) || (myResource.Y + 0.32*10 > 50.0 && myResource.Y < 50.0) || (myResource.X - 0.32*10 < 50.0 && myResource.X > 50.0) || (myResource.Y < 50.0 && myResource.Y > 50.0){
+		mdView.Spec.Update = 1
+	}
+	mdView.Spec.PodX = strconv.FormatFloat(myResource.X,'f',2,64)
+	mdView.Spec.PodY = strconv.FormatFloat(myResource.Y,'f',2,64)
+	_, err := clientset.CtlV1().LocationCtls("default").Update(context.TODO(), mdView, metav1.UpdateOptions{})
         if err != nil {
-                return 0,err
+                return err
         }
     }else{
-	err := clientset.DeleteCustomResource("ctl", "v1", "default", myResource.Name, customResource,metav1.DeleteOptions{})
+	err := clientset.CtlV1().LocationCtls("default").Delete(context.TODO(), myResource.Name, metav1.DeleteOptions{})
 	if err != nil {
-		return 0,err
+		return err
 	}
-	myResource.deleted = 1
+	myResource.Deleted = 1
 }
-    return 0,nil
+    return nil
 
 
 }
@@ -167,9 +138,9 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	n := 25
-	var p []*MyCustomResource 
-	name := "example-custom-resource"
+	n := 100
+	var p []*MyCustomResource
+	name := "example-custom-resource0"
 	crdname := ""
 	for i := 1; i <= n; i++ {
         crdname = name + strconv.Itoa(i)
@@ -179,30 +150,52 @@ func main() {
 	panic(err.Error())
 	}
 	}
-        time.Sleep(10*time.Second)
-	j := 0
+
+//	var wg sync.WaitGroup
+//	var mu sync.Mutex
 	for {
 	start := time.Now()
-	j = 0
+	j := 0
 	fmt.Println(time.Now())
-	var delindex []int
-	for index, v in range p {
-        crdname = name + strconv.Itoa(i)
-	if v.deleted != 1{
+	var mdViewList *pinev1.LocationCtlList
+        mdViewList, err := clientset.CtlV1().LocationCtls("default").List(context.TODO(),metav1.ListOptions{})
+                if err != nil {
+                panic(err.Error())
+        }
+
+	for _, v := range p {
+//		wg.Add(1)
+	if v.Deleted != 1{
 		j += 1
-        del,err = updateCustomResource(clientset, v)
+		fmt.Println(v)
+//	go func(clientset *versioned.Clientset, v *MyCustomResource, mdViewList *pinev1.LocationCtlList){
+
+//		defer  wg.Done()
+//		mu.Lock()
+//		defer mu.Unlock()
+var temp pinev1.LocationCtl
+for _, cr := range mdViewList.Items {
+	if cr.Name == v.Name {
+		temp=cr
+		break
+	}}
+  //            mu.Lock()
+    //          defer mu.Unlock()
+
+        err = updateCustomResource(clientset, v,&temp)
         if err != nil {
-        panic(err.Error())
-        }}}
+        panic(err.Error())}
+//}(clientset, v,mdViewList)
+}}
+//wg.Wait()
 	if j == 0 {
 		break
 	}
 	elapsed := time.Since(start)
-	sleepDurarion := time.Second - elapsed
+	sleepDuration := time.Second*10 - elapsed
 	if sleepDuration > 0 {
 		time.Sleep(sleepDuration)
 	}
 	fmt.Println(elapsed)
 }
-
 }

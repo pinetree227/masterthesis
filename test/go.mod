@@ -3,7 +3,7 @@ module gihub.com/pinetree227/test
 go 1.21.1
 
 require (
-	github.com/pinetree227/location-ctl v0.0.0-20231115094435-bed4b1dd6d85
+	github.com/pinetree227/location-ctl v0.0.0-20231203073001-0739f6278687
 	k8s.io/apimachinery v0.28.3
 	k8s.io/client-go v0.28.3
 )

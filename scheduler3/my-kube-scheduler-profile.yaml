@@ -1,0 +1,16 @@
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+clientConnection:
+   kubeconfig: "/etc/kubernetes/scheduler.conf"
+profiles:
+  - plugins:
+      preFilter:
+        enabled:
+        - name: SamplePlugin
+      filter:
+        enabled:
+        - name: SamplePlugin
+      score:
+        enabled:
+        - name: SamplePlugin
+          weight: 5

@@ -35,7 +35,9 @@ X string
 Y string
 Apptype string
 Node string
+Name string
 }
+
 func SeparateData(df dataframe.DataFrame, specie string) dataframe.DataFrame {
 	// Filter
 	DF := df.Filter(
@@ -49,10 +51,11 @@ func SeparateData(df dataframe.DataFrame, specie string) dataframe.DataFrame {
 	return DF
 }
 
-func makeScatterPlot(df dataframe.DataFrame) *plotter.Scatter {
+func makeScatterPlot(df dataframe.DataFrame)(*plotter.Scatter,*plotter.Labels) {
 	records := df.Records()
 	n := len(records)
 	pts := make(plotter.XYs, n-1)
+	names := make([]string,n-1)
 	for i, r := range records {
         if i == 0 {
 			// Skip colname
@@ -65,15 +68,21 @@ func makeScatterPlot(df dataframe.DataFrame) *plotter.Scatter {
 		// str to float64
 		pts[i-1].X, _ = strconv.ParseFloat(r[0], 64)
 		pts[i-1].Y, _ = strconv.ParseFloat(r[1], 64)
+		names[i-1] = r[4]
+
     }
 	// fmt.Println(pts)
-
+	textPoints := plotter.XYLabels{
+		XYs: pts,
+		Labels: names,
+	}
+	lab, err := plotter.NewLabels(textPoints)
 	s, err := plotter.NewScatter(pts)
 	if err != nil {
 panic(err.Error())
 	}
  
-	return s
+	return s,lab
 }
 
 func SaveScatterPlot(df1, df2, df3, df4 dataframe.DataFrame, species []string,num int) {
@@ -87,10 +96,10 @@ func SaveScatterPlot(df1, df2, df3, df4 dataframe.DataFrame, species []string,nu
 	p.Add(plotter.NewGrid())
 
 	// Make a scatter plotter
-	sp1 := makeScatterPlot(df1)
-	sp2 := makeScatterPlot(df2)
-	sp3 := makeScatterPlot(df3)
-	sp4 := makeScatterPlot(df4)
+	sp1,l1 := makeScatterPlot(df1)
+	sp2,l2 := makeScatterPlot(df2)
+	sp3,l3 := makeScatterPlot(df3)
+	sp4,l4 := makeScatterPlot(df4)
 
 	// Set color with "gonum.org/v1/plot/plotutil"
 	sp1.GlyphStyle.Color = plotutil.Color(0)
@@ -114,18 +123,22 @@ func SaveScatterPlot(df1, df2, df3, df4 dataframe.DataFrame, species []string,nu
 	p.Add(sp2)
     p.Add(sp3)
     p.Add(sp4)
+    p.Add(l1)
+    p.Add(l2)
+    p.Add(l3)
+    p.Add(l4)
     p.Legend.Add(species[0], sp1)
     p.Legend.Add(species[1], sp2)
     p.Legend.Add(species[2], sp3)
     p.Legend.Add(species[3], sp4)
 	// Set the range of the axis
-    // p.X.Min = 3
-    // p.X.Max = 9
-    // p.Y.Min = 1
-    // p.Y.Max = 5
+    p.X.Min = 0
+    p.X.Max = 100
+    p.Y.Min = 0
+    p.Y.Max = 100
 
 	// Save the plot to a PNG file
- 	if err := p.Save(4*vg.Inch, 4*vg.Inch, "./images/ScatterPlot"+strconv.Itoa(num)+".png"); err != nil {
+if err := p.Save(4*vg.Inch, 4*vg.Inch, "/home/vboxuser/Desktop/images/ScatterPlot"+strconv.Itoa(num)+".png"); err != nil {
 	panic(err.Error())
 	}
 }
@@ -153,18 +166,20 @@ func main() {
         }
 	num := 0
 	for {
+	
 	pods, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
+	
 	if len(pods.Items) == 0{
 		break
 	}
 	var p []Car
 	for _, pod := range pods.Items {
 		for _, condition := range pod.Status.Conditions {
-		if condition.Type == v1.PodReady && condition.Status == v1.ConditionTrue {
-			newCar := Car{pod.Labels["podx"],pod.Labels["pody"],pod.Labels["apptype"],pod.Spec.NodeName}
+		if condition.Type == v1.PodScheduled {
+			newCar := Car{pod.Labels["podx"],pod.Labels["pody"],pod.Labels["apptype"],pod.Spec.NodeName,pod.Name[len(pod.Name)-2:]}
 			p = append(p,newCar)
 		}
 	}
@@ -190,17 +205,17 @@ fmt.Println(DF)
 */
 
 	// Separate data by species
-	species := []string{"worker2525", "worker7525", "worker2575","worker7575"}
+	species := []string{"worker2525", "worker2575", "worker7525","worker7575"}
 	DF1 := SeparateData(DF, species[0])
 	DF2 := SeparateData(DF, species[1])
 	DF3 := SeparateData(DF, species[2])
 	DF4 := SeparateData(DF, species[3])
 	// fmt.Println(seDF)
 	// fmt.Println(veDF)
-	fmt.Println(DF1)
+	//fmt.Println(DF1)
 	// Save the plot to a PNG file
 	SaveScatterPlot(DF1, DF2, DF3,DF4, species,num)
+	time.Sleep(20*time.Second)
 	num += 1
-	time.Sleep(10*time.Second)
 }
 }

@@ -46,7 +46,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	var sum, sumSquared float64
+	var sum, sum2, count float64
 
 	for _, pod := range pods.Items {
 		wg.Add(1)
@@ -77,18 +77,25 @@ func main() {
 				defer mu.Unlock()
 				dest := (x - podx) * (x - podx) + (y - pody) * (y - pody)
 				sum += math.Sqrt(float64(dest))
-				sumSquared += float64(dest)
+				if pod.Labels["apptype"] == "realtime"{
+
+					sum2 += math.Sqrt(float64(dest))
+					count += 1.0
+				}
+//				sumSquared += float64(dest)
 			}(pod)
 	}
 
 	wg.Wait()
 
 	average := sum / float64(len(pods.Items))
-	variance := sumSquared/float64(len(pods.Items)) - average*average
+	average2 := sum2 / count
+//	variance := sumSquared/float64(len(pods.Items)) - average*average
 
-	fmt.Printf("Sum: %f\n", sum)
-	fmt.Printf("Average: %f\n", average)
-	fmt.Printf("Variance: %f\n", variance)
+//	fmt.Printf("Variance: %f\n", variance)
+fmt.Printf("average1: %f\n", average)
+fmt.Printf("average2: %f\n", average2)
+
 }
 
 
