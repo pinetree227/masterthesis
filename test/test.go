@@ -24,7 +24,7 @@ import (
 	//"path/filepath"
 	//"time"
 	"strconv"
-	"sync"
+//	"sync"
 	//"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 //	"k8s.io/client-go/kubernetes"
@@ -43,7 +43,7 @@ import (
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
-
+/*
 func createCustomResource(clientset *versioned.Clientset, name string) error {
  options2 := []string{"realtime","no-realtime"}
     cr := &pinev1.LocationCtl{
@@ -55,7 +55,46 @@ func createCustomResource(clientset *versioned.Clientset, name string) error {
   PodX: strconv.Itoa(rand.Intn(100)),
   PodY: strconv.Itoa(rand.Intn(100)),
   Update: 0,
-  Apptype: options2[rand.Intn(len(options2))],
+  Apptype: options2[rand.Intn(2)],
+  Replicas: 1,
+        },
+    }
+    _, err := clientset.CtlV1().LocationCtls("default").Create(context.TODO(), cr, metav1.CreateOptions{})
+    if err != nil {
+        return fmt.Errorf("failed to create custom resource: %v", err)
+    }
+
+    return nil
+}*/
+func createCustomResource(clientset *versioned.Clientset, name string) error {
+//    options1 := []string{"A","B","C","D","E","F","G","H"}
+    options2 := []string{"realtime","no-realtime"}
+//    loadtype := options1[rand.Intn(len(options1))]
+//    apptype := options2[rand.Intn(len(options2))]
+    x:=rand.Float64()*100
+    y:=rand.Float64()*100
+
+/*    switch loadtype {
+    case "A","B":
+            x = 75.00
+    case "C","D":
+            x = 25.00
+    case "E","F":
+            y = 75.00
+    case "G","H":
+            y = 25.00
+    }
+    */
+    cr := &pinev1.LocationCtl{
+        ObjectMeta: metav1.ObjectMeta{
+            Name: name,
+        },
+        Spec: pinev1.LocationCtlSpec{
+            // Set your custom resource spec fields here
+  PodX: strconv.FormatFloat(x,'f',2,64),
+  PodY: strconv.FormatFloat(y,'f',2,64),
+  Update: 0,
+  Apptype: options2[rand.Intn(2)],
   Replicas: 1,
         },
     }
@@ -92,18 +131,18 @@ func main() {
 
 	name := "example-custom-resource"
 	crdname := ""
-	var wg sync.WaitGroup
+//	var wg sync.WaitGroup
 	for i := 1; i <= n; i++ {
-		wg.Add(1)
+//		wg.Add(1)
         crdname = name + strconv.Itoa(i)
-	                go func(clientset *versioned.Clientset, crdname string){
-                defer  wg.Done()
-
+//	                go func(clientset *versioned.Clientset, crdname string){
+  //        defer  wg.Done()
+//	flag := 0
 	err = createCustomResource(clientset, crdname)
 	if err != nil {
 	panic(err.Error())
 	}
-}(clientset, crdname)
+//}(clientset, crdname)
 }
-wg.Wait()
+//wg.Wait()
 }

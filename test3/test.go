@@ -66,7 +66,7 @@ func createCustomResource(clientset *versioned.Clientset, name string) error {
 func updateCustomResource(clientset *versioned.Clientset, mdView *pinev1.LocationCtl)  error {
 	mdView.Spec.PodX = strconv.FormatFloat(rand.Float64()*100,'f',2,64)
 	mdView.Spec.PodY = strconv.FormatFloat(rand.Float64()*100,'f',2,64)
-	if   rand.Float64()  < 0.05{
+	if   rand.Float64()  < 0.01{
 		mdView.Spec.Update = 1
 	}
 	_, err := clientset.CtlV1().LocationCtls("default").Update(context.TODO(), mdView, metav1.UpdateOptions{})
@@ -98,7 +98,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	n := 100
+	n :=200
 	//var p []*MyCustomResource
 	name := "example-custom-resource0"
 	crdname := ""
@@ -113,39 +113,29 @@ func main() {
 	var wg sync.WaitGroup
 //	var mu sync.Mutex
 	for {
-		        var mdViewList *pinev1.LocationCtlList
+	var mdViewList *pinev1.LocationCtlList
         mdViewList, err = clientset.CtlV1().LocationCtls("default").List(context.TODO(),metav1.ListOptions{})
                 if err != nil {
                 panic(err.Error())
         }
 
-	var timesum time.Duration
+//	var timesum time.Duration
 	start := time.Now()
-//		mu.Lock()
-//		defer mu.Unlock()
 for _, cr := range mdViewList.Items {
 	       wg.Add(1)
-
 	        go func(clientset *versioned.Clientset, cr pinev1.LocationCtl){
 		defer  wg.Done()
-
-  //            mu.Lock()
-    //          defer mu.Unlock()
-    start2 := time.Now()
         err = updateCustomResource(clientset, &cr)
         if err != nil {
         panic(err.Error())}
-	elapsed2 := time.Since(start2)
-	timesum += elapsed2
 }(clientset, cr)
 }
-        elapsed := time.Since(start)
-        sleepDuration := time.Second - elapsed
+wg.Wait()
+	elapsed := time.Since(start)
+       /* sleepDuration := time.Second - elapsed
         if sleepDuration > 0 {
                 time.Sleep(sleepDuration)
-        }
-	average := timesum / time.Duration(n)
-	fmt.Println(average)
-wg.Wait()
+        }*/
+	fmt.Println(elapsed)
 }
 }

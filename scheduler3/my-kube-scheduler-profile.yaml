@@ -13,4 +13,3 @@ profiles:
       score:
         enabled:
         - name: SamplePlugin
-          weight: 5

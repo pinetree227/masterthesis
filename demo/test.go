@@ -44,9 +44,9 @@ Deleted int
 
 func createCustomResource(clientset *versioned.Clientset, name string) (*MyCustomResource, error) {
     options1 := []string{"A","B","C","D","E","F","G","H"}
-    options2 := []string{"realtime","no-realtime"}
+//    options2 :=
     loadtype := options1[rand.Intn(len(options1))]
-    apptype := options2[rand.Intn(len(options2))]
+//    apptype := options2[rand.Intn(len(options2))]
     x:=rand.Float64()*100
     y:=rand.Float64()*100
 
@@ -60,7 +60,7 @@ func createCustomResource(clientset *versioned.Clientset, name string) (*MyCusto
     case "G","H":
 	    y = 25.00
     }
-    newResource := &MyCustomResource{name,x,y,0,apptype,loadtype,0}
+    newResource := &MyCustomResource{name,x,y,0,"realtime",loadtype,0}
     cr := &pinev1.LocationCtl{
         ObjectMeta: metav1.ObjectMeta{
             Name: name,
@@ -70,7 +70,7 @@ func createCustomResource(clientset *versioned.Clientset, name string) (*MyCusto
   PodX: strconv.FormatFloat(x,'f',2,64),
   PodY: strconv.FormatFloat(y,'f',2,64),
   Update: 0,
-  Apptype: apptype,
+  Apptype: "realtime",
   Replicas: 1,
         },
     }
@@ -86,17 +86,17 @@ func updateCustomResource(clientset *versioned.Clientset, myResource *MyCustomRe
 	myResource.Update += 1
 	switch myResource.Loadtype {
 	case "A","C":
-		myResource.Y += 0.32*10
+		myResource.Y += 3.33
 	case "B","D":
-		myResource.Y -= 0.32*10
+		myResource.Y -= 3.33
         case "E","G":
-		myResource.X += 0.32*10
+		myResource.X += 3.33
         case "F","H":
-		myResource.X -= 0.32*10
+		myResource.X -= 3.33
     }
     if myResource.X < 100 && myResource.Y < 100 && myResource.X > 0 && myResource.Y > 0 {
 
-	    if (myResource.X + 0.32*10 > 50.0 && myResource.X < 50.0) || (myResource.Y + 0.32*10 > 50.0 && myResource.Y < 50.0) || (myResource.X - 0.32*10 < 50.0 && myResource.X > 50.0) || (myResource.Y < 50.0 && myResource.Y > 50.0){
+	    if (myResource.X + 3.33 > 50.0 && myResource.X < 50.0) || (myResource.Y + 3.33 > 50.0 && myResource.Y < 50.0) || (myResource.X - 3.33 < 50.0 && myResource.X > 50.0) || (myResource.Y - 3.33 < 50.0 && myResource.Y > 50.0){
 		mdView.Spec.Update = 1
 	}
 	mdView.Spec.PodX = strconv.FormatFloat(myResource.X,'f',2,64)
@@ -138,7 +138,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	n := 100
+	n := 5
 	var p []*MyCustomResource
 	name := "example-custom-resource0"
 	crdname := ""
@@ -192,7 +192,7 @@ for _, cr := range mdViewList.Items {
 		break
 	}
 	elapsed := time.Since(start)
-	sleepDuration := time.Second*10 - elapsed
+	sleepDuration := time.Second - elapsed
 	if sleepDuration > 0 {
 		time.Sleep(sleepDuration)
 	}

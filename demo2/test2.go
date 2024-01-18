@@ -166,12 +166,11 @@ func main() {
         }
 	num := 0
 	for {
-	
+	start := time.Now()
 	pods, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
-	
 	if len(pods.Items) == 0{
 		break
 	}
@@ -215,7 +214,14 @@ fmt.Println(DF)
 	//fmt.Println(DF1)
 	// Save the plot to a PNG file
 	SaveScatterPlot(DF1, DF2, DF3,DF4, species,num)
-	time.Sleep(20*time.Second)
+	       elapsed := time.Since(start)
+	               sleepDuration := time.Second/2 - elapsed
+        if sleepDuration > 0 {
+                time.Sleep(sleepDuration)
+        }
+
+	               fmt.Println(elapsed)
+
 	num += 1
 }
 }

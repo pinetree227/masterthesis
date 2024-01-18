@@ -199,11 +199,11 @@ func (pl *SamplePlugin) Filter(ctx context.Context, state *framework.CycleState,
                 dest2 := math.Sqrt(float64(dest))
 		if s.z == "realtime"{
                // klog.V(4).InfoS("score:",nodeName,dest4)
-                       if dest2 > 35{
+                       if dest2 >= 20{
                                return framework.NewStatus(framework.Unschedulable, fmt.Sprintf("%g : %v",dest2,nodeName))
 }
 }else{
- if dest2 > 70{
+ if dest2 >= 60{
                                return framework.NewStatus(framework.Unschedulable, fmt.Sprintf("%g : %v",dest2,nodeName))
 
 }
@@ -236,7 +236,7 @@ func (pl *SamplePlugin) Score(ctx context.Context, state *framework.CycleState, 
 		return 0, framework.AsStatus(err)
 	}
 	s, _ :=data.(*preScoreState);
-              if s.z == "realtime"{
+	if s.z == "realtime"{
 	dest := (x - s.x) * (x - s.x) + (y - s.y) * (y - s.y)
 	if dest > 0 {
 		dest2 := math.Sqrt(float64(dest))
@@ -244,7 +244,8 @@ func (pl *SamplePlugin) Score(ctx context.Context, state *framework.CycleState, 
 		dest4 := int64(float64(dest3) * float64(100) / float64(110))
 		klog.V(4).InfoS("score:",nodeName,dest4)
 		return dest4, nil
-	}}
+	}
+}
 	return 0, nil
 }
 
